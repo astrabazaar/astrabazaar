@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .input-field {
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-right: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .chart-container {
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Finance App</h2>
+
+        <!-- Sección para ingreso y distribución -->
+        <div class="section">
+            <div class="input-field">
+                <label for="income_input">Ingrese la cantidad de dinero:</label>
+                <input type="number" id="income_input" class="input">
+            </div>
+            <button class="btn" onclick="divideIncome()">Dividir Ingreso</button>
+            <div id="results">
+                <p>Reinversión: <span id="reinvestment">0</span></p>
+                <p>Gastos: <span id="expenses">0</span></p>
+                <p>Ahorro: <span id="savings">0</span></p>
+                <p>Saldo Total: <span id="balance">0</span></p>
+            </div>
+        </div>
+
+        <!-- Sección para cargar, guardar, limpiar y cerrar datos -->
+        <div class="section">
+            <button class="btn" onclick="loadData()">Abrir</button>
+            <button class="btn" onclick="saveData()">Guardar</button>
+            <button class="btn" onclick="clearData()">Limpiar</button>
+            <button class="btn" onclick="closeApp()">Cerrar</button>
+        </div>
+
+        <!-- Sección para fecha y generación de reporte -->
+        <div class="section">
+            <p>Fecha: <span id="date"></span></p>
+            <div class="input-field">
+                <button class="btn" onclick="selectDate()">Seleccionar Fecha</button>
+            </div>
+            <div class="input-field">
+                <button class="btn" onclick="generateReport()">Generar Reporte</button>
+            </div>
+        </div>
+
+        <!-- Sección para modificar reinversión, gastos y ahorro -->
+        <div class="section">
+            <div class="input-field">
+                <label for="reinvestment_input">Modificar Reinversión:</label>
+                <input type="number" id="reinvestment_input" class="input">
+                <button class="btn" onclick="modifyBalance('reinvestment')">Sumar</button>
+                <button class="btn" onclick="modifyBalance('reinvestment', true)">Restar</button>
+            </div>
+            <div class="input-field">
+                <label for="expenses_input">Modificar Gastos:</label>
+                <input type="number" id="expenses_input" class="input">
+                <button class="btn" onclick="modifyBalance('expenses')">Sumar</button>
+                <button class="btn" onclick="modifyBalance('expenses', true)">Restar</button>
+            </div>
+            <div class="input-field">
+                <label for="savings_input">Modificar Ahorro:</label>
+                <input type="number" id="savings_input" class="input">
+                <button class="btn" onclick="modifyBalance('savings')">Sumar</button>
+                <button class="btn" onclick="modifyBalance('savings', true)">Restar</button>
+            </div>
+        </div>
+
+        <!-- Sección para el gráfico -->
+        <div class="section chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Función para dividir el ingreso en reinversión, gastos y ahorro
+        function divideIncome() {
+            let income = parseFloat(document.getElementById('income_input').value);
+            if (isNaN(income)) {
+                alert('Por favor, ingrese un número válido');
+                return;
+            }
+
+            let reinvestment = income * 0.4;
+            let expenses = income * 0.3;
+            let savings = income * 0.3;
+
+            // Mostrar los resultados calculados en la interfaz
+            document.getElementById('reinvestment').textContent = reinvestment.toFixed(2);
+            document.getElementById('expenses').textContent = expenses.toFixed(2);
+            document.getElementById('savings').textContent = savings.toFixed(2);
+
+            updateBalance(); // Actualizar el saldo total
+        }
+
+        // Función para actualizar el saldo total
+        function updateBalance() {
+            let reinvestment = parseFloat(document.getElementById('reinvestment').textContent);
+            let expenses = parseFloat(document.getElementById('expenses').textContent);
+            let savings = parseFloat(document.getElementById('savings').textContent);
+
+            let balance = reinvestment + expenses + savings;
+            document.getElementById('balance').textContent = balance.toFixed(2);
+        }
+
+        // Función para modificar el saldo de reinversión, gastos o ahorro
+        function modifyBalance(category, subtract=false) {
+            let amount = parseFloat(document.getElementById(`${category}_input`).value);
+            if (isNaN(amount)) {
+                alert('Por favor, ingrese un número válido');
+                return;
+            }
+
+            let current_value = parseFloat(document.getElementById(category).textContent);
+
+            if (subtract) {
+                amount *= -1; // Restar si subtract es true
+            }
+
+            let new_value = current_value + amount;
+            document.getElementById(category).textContent = new_value.toFixed(2);
+
+            updateBalance(); // Actualizar el saldo total después de modificar
+        }
+
+        // Función para guardar los datos en el almacenamiento local
+        function saveData() {
+            let data = {
+                reinvestment: parseFloat(document.getElementById('reinvestment').textContent),
+                expenses: parseFloat(document.getElementById('expenses').textContent),
+                savings: parseFloat(document.getElementById('savings').textContent),
+                date: document.getElementById('date').textContent
+            };
+
+            localStorage.setItem('finance_data', JSON.stringify(data)); // Guardar como cadena JSON
+            alert('Datos guardados correctamente');
+        }
+
+        // Función para cargar los datos desde el almacenamiento local
+        function loadData() {
+            let data = JSON.parse(localStorage.getItem('finance_data')); // Obtener y parsear los datos JSON
+            if (data) {
+                document.getElementById('reinvestment').textContent = data.reinvestment.toFixed(2);
+                document.getElementById('expenses').textContent = data.expenses.toFixed(2);
+                document.getElementById('savings').textContent = data.savings.toFixed(2);
+                document.getElementById('date').textContent = data.date;
+                updateBalance(); // Actualizar el saldo total
+                alert('Datos cargados correctamente');
+            } else {
+                alert('No se encontraron datos guardados');
+            }
+        }
+
+        // Función para limpiar todos los campos de entrada y reiniciar valores a cero
+        function clearData() {
+            document.getElementById('income_input').value = '';
+            document.getElementById('reinvestment').textContent = '0';
+            document.getElementById('expenses').textContent = '0';
+            document.getElementById('savings').textContent = '0';
+            document.getElementById('balance').textContent = '0';
+            document.getElementById('date').textContent = '';
+        }
+
+        // Función para cerrar la aplicación (no es necesario en una aplicación web)
+        function closeApp() {
+            // No se necesita ninguna acción específica en HTML/JS para cerrar la aplicación
+            // ya que en un navegador, el usuario controla el cierre de la pestaña o ventana.
+        }
+
+        // Función para seleccionar una fecha y mostrarla en la interfaz
+        function selectDate() {
+            let selectedDate = prompt('Por favor, ingrese una fecha (YYYY-MM-DD)');
+            if (selectedDate) {
+                document.getElementById('date').textContent = selectedDate;
+            }
+        }
+
+        // Función para generar un reporte (solo muestra una alerta en este ejemplo)
+        function generateReport() {
+            let reinvestment = parseFloat(document.getElementById('reinvestment').textContent);
+            let expenses = parseFloat(document.getElementById('expenses').textContent);
+            let savings = parseFloat(document.getElementById('savings').textContent);
+
+            // Datos para el gráfico
+            let data = {
+                labels: ['Reinversión', 'Gastos', 'Ahorro'],
+                datasets: [{
+                    label: 'Datos Financieros',
+                    backgroundColor: ['#3498db', '#e74c3c', '#2ecc71'],
+                    data: [reinvestment, expenses, savings]
+                }]
+            };
+
+            // Configuración del gráfico
+            let config = {
+                type: 'pie',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return `${tooltipItem.label}: ${tooltipItem.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Obtener el contexto del canvas donde se dibujará el gráfico
+            let ctx = document.getElementById('myChart').getContext('2d');
+
+            // Crear una nueva instancia de Chart.js con la configuración y los datos
+            let myChart = new Chart(ctx, config);
+
+            // Mostrar el gráfico en un modal o en una nueva ventana
+            // Este ejemplo utiliza un simple alert, pero puedes personalizarlo según tus necesidades
+            alert('Reporte generado correctamente. Abre la consola para ver el gráfico.');
+
+            // Alternativamente, podrías abrir el gráfico en un modal o en una nueva ventana
+            // usando una librería de modales como Bootstrap o implementando un modal personalizado.
+        }
+    </script>
+</body>
+</html>
